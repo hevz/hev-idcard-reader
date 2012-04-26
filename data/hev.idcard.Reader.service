@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=hev.idcard.Reader
+Exec=/usr/sbin/hev-idcard-reader
+User=root
