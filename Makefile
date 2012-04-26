@@ -2,8 +2,8 @@
  
 PP=cpp
 CC=gcc
-CCFLAGS=-g `pkg-config --cflags gio-2.0`
-LDFLAGS=`pkg-config --libs gio-2.0`
+CCFLAGS=-g `pkg-config --cflags gio-2.0 gio-unix-2.0 gudev-1.0`
+LDFLAGS=`pkg-config --libs gio-2.0 gio-unix-2.0 gudev-1.0`
  
 SRCDIR=src
 BINDIR=bin
