@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	g_dbus_object_manager_server_export(server, G_DBUS_OBJECT_SKELETON(dbus_obj));
 	g_object_unref(dbus_obj);
 
-	g_bus_own_name(G_BUS_TYPE_SESSION, "hev.idcard.Reader",
+	g_bus_own_name(G_BUS_TYPE_SYSTEM, "hev.idcard.Reader",
 				G_BUS_NAME_OWNER_FLAGS_REPLACE | G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT,
 				bus_acquired_handler, NULL, bus_name_lost_handler, server, NULL);
 
