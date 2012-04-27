@@ -192,8 +192,6 @@ void hev_dbus_object_idcard_reader_manager_request_remove(HevDBusObjectIDCardRea
 		g_free(path);
 
 		p = g_dbus_object_get_object_path(G_DBUS_OBJECT(reader));
-
-		g_signal_emit(self, hev_dbus_object_idcard_reader_manager_signals[SIG_REMOVE], 0, p);
 		g_dbus_object_manager_server_unexport(server, p);
 
 		g_object_unref(reader);
@@ -368,5 +366,32 @@ static void g_udev_client_uevent_handler(GUdevClient *client, gchar *action,
 
 	if(0 == g_strcmp0(action, "add"))
 	  hev_serial_port_try_open(self, path);
+	else if(0 == g_strcmp0(action, "remove"))
+	{
+		GList *sl = NULL;
+
+		for(sl=priv->device_list; sl; sl=g_list_next(sl))
+		{
+			GObject *reader = sl->data;
+			GObject *serial_port = NULL;
+			const gchar *obj_path = NULL;
+			gchar *p = NULL;
+			gint t = 0;
+
+			g_object_get(reader, "serial-port", &serial_port, NULL);
+			g_object_get(serial_port, "path", &p, NULL);
+			g_object_unref(serial_port);
+			t = g_strcmp0(path, p);
+			g_free(p);
+
+			if(0 != t)
+			  continue;
+
+			obj_path = g_dbus_object_get_object_path(G_DBUS_OBJECT(reader));
+			g_signal_emit(self, hev_dbus_object_idcard_reader_manager_signals[SIG_REMOVE],
+						0, obj_path);
+			break;
+		}
+	}
 }
 
