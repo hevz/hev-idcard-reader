@@ -563,14 +563,19 @@ static void hev_dbus_object_idcard_reader_get_status_async_handler(GObject *sour
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
@@ -696,14 +701,19 @@ static void hev_dbus_object_idcard_reader_get_card_status_async_handler(GObject 
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
@@ -787,14 +797,19 @@ static void hev_dbus_object_idcard_reader_reset_async_handler(GObject *source_ob
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
@@ -827,14 +842,19 @@ static void hev_dbus_object_idcard_reader_set_max_rf_byte_async_handler(GObject 
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
@@ -864,14 +884,19 @@ static void hev_dbus_object_idcard_reader_select_card_async_handler(GObject *sou
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
@@ -904,14 +929,19 @@ static void hev_dbus_object_idcard_reader_read_base_info_async_handler(GObject *
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
+	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
+				res, NULL);
 	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	  return;
+	{
+		if(data)
+		  g_byte_array_unref(data);
+
+		return;
+	}
 
 	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
 	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
 
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
 	if(data)
 	{
 		/* Status */
