@@ -37,8 +37,6 @@ struct _HevDBusObjectIDCardReaderManagerPrivate
 
 static void hev_serial_port_try_open(HevDBusObjectIDCardReaderManager *self,
 			const gchar *device_path);
-static void hev_serial_port_try_remove(HevDBusObjectIDCardReaderManager *self,
-			const gchar *device_path);
 
 G_DEFINE_TYPE(HevDBusObjectIDCardReaderManager, hev_dbus_object_idcard_reader_manager, G_TYPE_DBUS_OBJECT_SKELETON);
 
@@ -162,6 +160,50 @@ GObject *hev_dbus_object_idcard_reader_manager_new(const gchar *object_path)
 				"g-object-path", object_path, NULL);
 }
 
+void hev_dbus_object_idcard_reader_manager_request_remove(HevDBusObjectIDCardReaderManager *self,
+			GObject *reader)
+{
+	HevDBusObjectIDCardReaderManagerPrivate *priv = NULL;
+	GList *sl = NULL;
+
+	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
+
+	g_return_if_fail(HEV_IS_DBUS_OBJECT_IDCARD_READER_MANAGER(self));
+	g_return_if_fail(HEV_IS_DBUS_OBJECT_IDCARD_READER(reader));
+	priv = HEV_DBUS_OBJECT_IDCARD_READER_MANAGER_GET_PRIVATE(self);
+
+	for(sl=priv->device_list; sl; sl=g_list_next(sl))
+	{
+		GDBusObjectManagerServer *server = NULL;
+		GObject *serial_port = NULL;
+		const gchar *p = NULL;
+		gchar *path = NULL;
+
+		if(reader != sl->data)
+		  continue;
+
+		server = g_object_get_data(G_OBJECT(self),
+					"dbus-object-manager-server");
+		g_object_get(reader, "serial-port", &serial_port, NULL);
+		g_object_get(serial_port, "path", &path, NULL);
+		g_object_unref(serial_port);
+		g_debug("%s:%d[%s]=>(Try to remove %s ...)",
+							__FILE__, __LINE__, __FUNCTION__, path);
+		g_free(path);
+
+		p = g_dbus_object_get_object_path(G_DBUS_OBJECT(reader));
+
+		g_signal_emit(self, hev_dbus_object_idcard_reader_manager_signals[SIG_REMOVE], 0, p);
+		g_dbus_object_manager_server_unexport(server, p);
+
+		g_object_unref(reader);
+		g_object_unref(serial_port);
+		priv->device_list = g_list_remove(priv->device_list, reader);
+
+		break;
+	}
+}
+
 GList * hev_dbus_object_idcard_reader_manager_enumerate_devices(HevDBusObjectIDCardReaderManager *self)
 {
 	HevDBusObjectIDCardReaderManagerPrivate *priv = NULL;
@@ -186,45 +228,6 @@ static void hev_serial_port_try_open(HevDBusObjectIDCardReaderManager *self,
 
 	hev_serial_port_new_async(device_path, NULL,
 				hev_serial_port_new_async_handler, self);
-}
-
-static void hev_serial_port_try_remove(HevDBusObjectIDCardReaderManager *self,
-			const gchar *device_path)
-{
-	HevDBusObjectIDCardReaderManagerPrivate *priv = HEV_DBUS_OBJECT_IDCARD_READER_MANAGER_GET_PRIVATE(self);
-	GList *sl = NULL;
-
-	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
-
-	g_debug("%s:%d[%s]=>(Try to remove %s ...)",
-						__FILE__, __LINE__, __FUNCTION__, device_path);
-	for(sl=priv->device_list; sl; sl=g_list_next(sl))
-	{
-		GObject *serial_port = NULL;
-		gchar *p = NULL;
-		gint t = 0;
-
-		g_object_get(G_OBJECT(sl->data), "serial-port", &serial_port, NULL);
-		g_object_unref(serial_port);
-		g_object_get(serial_port, "path", &p, NULL);
-		t = g_strcmp0(device_path, p);
-		g_free(p);
-		if(0 == t)
-		{
-			GDBusObjectManagerServer *server = g_object_get_data(G_OBJECT(self),
-						"dbus-object-manager-server");
-
-			g_signal_emit(self, hev_dbus_object_idcard_reader_manager_signals[SIG_REMOVE],
-						0, g_dbus_object_get_object_path(G_DBUS_OBJECT(sl->data)));
-			g_dbus_object_manager_server_unexport(server,
-						g_dbus_object_get_object_path(G_DBUS_OBJECT(sl->data)));
-			g_object_unref(sl->data);
-			g_object_unref(serial_port);
-			priv->device_list = g_list_remove(priv->device_list, sl->data);
-
-			break;
-		}
-	}
 }
 
 static void hev_serial_port_queue_command_async_handler(GObject *source_object,
@@ -264,6 +267,7 @@ static void hev_serial_port_queue_command_async_handler(GObject *source_object,
 						priv->device_max_id++);
 			dbus_obj = hev_dbus_object_idcard_reader_new(dbus_obj_path,
 						source_object);
+			g_object_set_data(dbus_obj, "manager", self);
 			g_free(dbus_obj_path);
 
 			/* DBus interface */
@@ -364,7 +368,5 @@ static void g_udev_client_uevent_handler(GUdevClient *client, gchar *action,
 
 	if(0 == g_strcmp0(action, "add"))
 	  hev_serial_port_try_open(self, path);
-	else if(0 == g_strcmp0(action, "remove"))
-	  hev_serial_port_try_remove(self, path);
 }
 

@@ -9,6 +9,7 @@
  */
 
 #include "hev-dbus-object-idcard-reader.h"
+#include "hev-dbus-object-idcard-reader-manager.h"
 #include "hev-serial-port.h"
 
 #define HEV_DBUS_OBJECT_IDCARD_READER_GET_STATUS_DELAY			3000
@@ -489,6 +490,7 @@ static gboolean hev_dbus_object_idcard_reader_queue_command_timeout_handler(gpoi
 {
 	HevDBusObjectIDCardReader *self = NULL;
 	HevDBusObjectIDCardReaderPrivate *priv = NULL;
+	HevDBusObjectIDCardReaderManager *manager = NULL;
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
@@ -512,9 +514,8 @@ static gboolean hev_dbus_object_idcard_reader_queue_command_timeout_handler(gpoi
 					0, priv->card_status);
 	}
 
-	// TODO: Request idcard reader manager to remove the object.
-	g_debug("%s:%d[%s]=>(TODO: Request idcard reader manager to remove the object.)",
-				__FILE__, __LINE__, __FUNCTION__);
+	manager = g_object_get_data(G_OBJECT(self), "manager");
+	hev_dbus_object_idcard_reader_manager_request_remove(manager, G_OBJECT(self));
 	
 	return FALSE;
 }
@@ -615,6 +616,8 @@ static void hev_dbus_object_idcard_reader_get_status_async_handler(GObject *sour
 		}
 		else
 		{
+			HevDBusObjectIDCardReaderManager *manager = NULL;
+			
 			if(priv->status)
 			{
 				priv->status = FALSE;
@@ -629,15 +632,16 @@ static void hev_dbus_object_idcard_reader_get_status_async_handler(GObject *sour
 							0, priv->card_status);
 			}
 
-			// TODO: Request idcard reader manager to remove the object.
-			g_debug("%s:%d[%s]=>(TODO: Request idcard reader manager to remove the object.)",
-						__FILE__, __LINE__, __FUNCTION__);
+			manager = g_object_get_data(G_OBJECT(self), "manager");
+			hev_dbus_object_idcard_reader_manager_request_remove(manager, G_OBJECT(self));
 		}
 
 		g_byte_array_unref(data);
 	}
 	else
 	{
+		HevDBusObjectIDCardReaderManager *manager = NULL;
+		
 		if(priv->status)
 		{
 			priv->status = FALSE;
@@ -652,9 +656,8 @@ static void hev_dbus_object_idcard_reader_get_status_async_handler(GObject *sour
 						0, priv->card_status);
 		}
 
-		// TODO: Request idcard reader manager to remove the object.
-		g_debug("%s:%d[%s]=>(TODO: Request idcard reader manager to remove the object.)",
-					__FILE__, __LINE__, __FUNCTION__);
+		manager = g_object_get_data(G_OBJECT(self), "manager");
+		hev_dbus_object_idcard_reader_manager_request_remove(manager, G_OBJECT(self));
 	}
 }
 

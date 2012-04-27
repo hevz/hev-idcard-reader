@@ -43,6 +43,9 @@ GType hev_dbus_object_idcard_reader_manager_get_type(void);
 
 GObject * hev_dbus_object_idcard_reader_manager_new(const gchar *object_path);
 
+void hev_dbus_object_idcard_reader_manager_request_remove(HevDBusObjectIDCardReaderManager *self,
+			GObject *reader);
+
 GList * hev_dbus_object_idcard_reader_manager_enumerate_devices(HevDBusObjectIDCardReaderManager *self);
 
 G_END_DECLS
