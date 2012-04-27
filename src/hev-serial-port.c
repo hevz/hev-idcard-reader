@@ -285,16 +285,7 @@ static void g_simple_async_init_thread_handler(GSimpleAsyncResult *simple,
 	}
 
 	/* Config */
-	if(-1 == tcgetattr(priv->fd, &options))
-	{
-		GError *error = NULL;
-
-		error = g_error_new(G_IO_ERROR, g_io_error_from_errno(errno),
-					"%s", strerror(errno));
-		g_simple_async_result_take_error(simple, error);
-
-		return;
-	}
+	bzero(&options, sizeof(options));
 
 	/* 8N1 */
 	options.c_cflag &= ~PARENB;
