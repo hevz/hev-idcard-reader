@@ -42,8 +42,6 @@ static const guchar cmd_select_card[] = {0xAA, 0xAA, 0xAA, 0x96, 0x69, 0x00, 0x0
 static const guchar cmd_read_base_info[] = {0xAA, 0xAA, 0xAA, 0x96, 0x69, 0x00, 0x03, 0x30, 0x01, 0x32};
 /* Set max rf byte cmd */
 static const guchar cmd_set_max_rf_byte[] = {0xAA, 0xAA, 0xAA, 0x96, 0x69, 0x00, 0x04, 0x61, 0xFF, 0x50, 0xCA};
-/* Reset reader cmd */
-static const guchar cmd_reset[] = {0xAA, 0xAA, 0xAA, 0x96, 0x69, 0x00, 0x03, 0x10, 0xFF, 0xEC};
 
 /* Nation database */
 static const gchar *nations[] =
@@ -172,9 +170,6 @@ static gboolean hev_dbus_object_idcard_reader_install_get_status_timeout_handler
 static void hev_dbus_object_idcard_reader_get_card_status_async_handler(GObject *source_object,
 			GAsyncResult *res, gpointer user_data);
 static gboolean hev_dbus_object_idcard_reader_install_get_card_status_timeout_handler(gpointer user_data);
-
-static void hev_dbus_object_idcard_reader_reset_async_handler(GObject *source_object,
-			GAsyncResult *res, gpointer user_data);
 
 static void hev_dbus_object_idcard_reader_set_max_rf_byte_async_handler(GObject *source_object,
 			GAsyncResult *res, gpointer user_data);
@@ -591,15 +586,16 @@ static void hev_dbus_object_idcard_reader_get_status_async_handler(GObject *sour
 			if(priv->init_reader)
 			{
 				GByteArray *command = g_byte_array_new();
-				g_byte_array_append(command, cmd_reset, sizeof(cmd_reset));
+				g_byte_array_append(command, cmd_set_max_rf_byte,
+							sizeof(cmd_set_max_rf_byte));
 
-				/* Reset */
+				/* Set max rf byte */
 				hev_dbus_object_idcard_reader_queue_command_async(self, command,
-							hev_dbus_object_idcard_reader_reset_async_handler,
+							hev_dbus_object_idcard_reader_set_max_rf_byte_async_handler,
 							hev_serial_port_read_size_handler, HEV_DBUS_OBJECT_IDCARD_READER_QUEUE_COMMAND_TIMEOUT,
 							hev_dbus_object_idcard_reader_queue_command_null_timeout_handler,
 							self);
-
+				
 				g_byte_array_unref(command);
 
 				/* Install get card status timeout */
@@ -786,51 +782,6 @@ static gboolean hev_dbus_object_idcard_reader_install_get_card_status_timeout_ha
 	g_byte_array_unref(command);
 
 	return FALSE;
-}
-
-static void hev_dbus_object_idcard_reader_reset_async_handler(GObject *source_object,
-			GAsyncResult *res, gpointer user_data)
-{
-	HevDBusObjectIDCardReader *self = NULL;
-	HevDBusObjectIDCardReaderPrivate *priv = NULL;
-	GByteArray *data = NULL;
-
-	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
-
-	data = hev_serial_port_queue_command_finish(HEV_SERIAL_PORT(source_object),
-				res, NULL);
-	if(!HEV_IS_DBUS_OBJECT_IDCARD_READER(user_data))
-	{
-		if(data)
-		  g_byte_array_unref(data);
-
-		return;
-	}
-
-	self = HEV_DBUS_OBJECT_IDCARD_READER(user_data);
-	priv = HEV_DBUS_OBJECT_IDCARD_READER_GET_PRIVATE(self);
-
-	if(data)
-	{
-		/* Status */
-		if((9<=data->len) && (0x90==data->data[9]))
-		{
-			GByteArray *command = g_byte_array_new();
-			g_byte_array_append(command, cmd_set_max_rf_byte,
-						sizeof(cmd_set_max_rf_byte));
-
-			/* Set max rf byte */
-			hev_dbus_object_idcard_reader_queue_command_async(self, command,
-						hev_dbus_object_idcard_reader_set_max_rf_byte_async_handler,
-						hev_serial_port_read_size_handler, HEV_DBUS_OBJECT_IDCARD_READER_QUEUE_COMMAND_TIMEOUT,
-						hev_dbus_object_idcard_reader_queue_command_null_timeout_handler,
-						self);
-			
-			g_byte_array_unref(command);
-		}
-
-		g_byte_array_unref(data);
-	}
 }
 
 static void hev_dbus_object_idcard_reader_set_max_rf_byte_async_handler(GObject *source_object,
