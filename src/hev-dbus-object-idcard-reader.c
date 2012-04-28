@@ -439,6 +439,8 @@ static void hev_serial_port_queue_command_async_handler(GObject *source_object,
 	g_source_remove(timeout_id);
 
 	cmd_data->callback(source_object, res, cmd_data->user_data);
+
+	g_slice_free(HevDBusObjectIDCardReaderCmdData, cmd_data);
 }
 
 static void hev_dbus_object_idcard_reader_queue_command_async(HevDBusObjectIDCardReader *self,
