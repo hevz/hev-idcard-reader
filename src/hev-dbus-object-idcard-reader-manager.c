@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+#include <strings.h>
 #include <gudev/gudev.h>
 
 #include "hev-dbus-object-idcard-reader-manager.h"
@@ -41,6 +42,10 @@ static void hev_serial_port_try_open(HevDBusObjectIDCardReaderManager *self,
 G_DEFINE_TYPE(HevDBusObjectIDCardReaderManager, hev_dbus_object_idcard_reader_manager, G_TYPE_DBUS_OBJECT_SKELETON);
 
 static void hev_serial_port_new_async_handler(GObject *source_object,
+			GAsyncResult *res, gpointer user_data);
+static void hev_serial_port_close_async_handler(GObject *source_object,
+			GAsyncResult *res, gpointer user_data);
+static void hev_serial_port_config_async_handler(GObject *source_object,
 			GAsyncResult *res, gpointer user_data);
 static void g_udev_client_uevent_handler(GUdevClient *client, gchar *action,
 			GUdevDevice *device, gpointer user_data);
@@ -195,7 +200,8 @@ void hev_dbus_object_idcard_reader_manager_request_remove(HevDBusObjectIDCardRea
 		g_dbus_object_manager_server_unexport(server, p);
 
 		g_object_unref(reader);
-		g_object_unref(serial_port);
+		hev_serial_port_close_async(HEV_SERIAL_PORT(serial_port),
+					NULL, hev_serial_port_close_async_handler, NULL);
 		priv->device_list = g_list_remove(priv->device_list, reader);
 
 		break;
@@ -251,6 +257,7 @@ static void hev_serial_port_queue_command_async_handler(GObject *source_object,
 	if(data)
 	{
 		/* Status */
+		g_debug("----- %d %x ----", data->len, data->data[0]);
 		if((9<=data->len) && (0x90==data->data[9]))
 		{
 			GDBusObjectManagerServer *server = NULL;
@@ -329,7 +336,60 @@ static void hev_serial_port_new_async_handler(GObject *source_object,
 			GAsyncResult *res, gpointer user_data)
 {
 	GObject *serial_port = NULL;
-	GByteArray *command = g_byte_array_new();
+	GCancellable *cancellable = NULL;
+	guint source_id = 0;
+	struct termios options = { 0 };
+
+	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
+
+	serial_port = hev_serial_port_new_finish(res, NULL);
+	if(!HEV_IS_SERIAL_PORT(serial_port))
+	  return;
+
+	cancellable = g_cancellable_new();
+
+	bzero(&options, sizeof(options));
+
+	/* 8N1 */
+	options.c_cflag &= ~PARENB;
+	options.c_cflag &= ~CSTOPB;
+	options.c_cflag &= ~CSIZE;
+	options.c_cflag |= CS8;
+
+	/* Speed */
+	cfsetispeed(&options,B115200);
+	cfsetospeed(&options,B115200);
+
+	options.c_cflag |= CLOCAL |CREAD;
+	options.c_iflag &= ~INPCK;
+	options.c_cc[VTIME]= 10;
+	options.c_cc[VMIN] = 0 ;
+
+	/* Add timeout */
+	source_id = g_timeout_add(5000, g_timeout_handler, cancellable);
+	g_object_set_data(serial_port, "source-id", GUINT_TO_POINTER(source_id));
+
+	hev_serial_port_config_async(HEV_SERIAL_PORT(serial_port), &options, 
+				cancellable, hev_serial_port_config_async_handler,
+				user_data);
+
+	g_object_unref(cancellable);
+}
+
+static void hev_serial_port_close_async_handler(GObject *source_object,
+			GAsyncResult *res, gpointer user_data)
+{
+	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
+	
+	hev_serial_port_close_finish(HEV_SERIAL_PORT(source_object),
+					res, NULL);
+	g_object_unref(source_object);
+}
+
+static void hev_serial_port_config_async_handler(GObject *source_object,
+			GAsyncResult *res, gpointer user_data)
+{
+	GByteArray *command = NULL;
 	/* Get reader status */
 	guchar cmd[] = {0xAA, 0xAA, 0xAA, 0x96, 0x69, 0x00, 0x03, 0x11, 0xFF, 0xED};
 	GCancellable *cancellable = NULL;
@@ -337,15 +397,24 @@ static void hev_serial_port_new_async_handler(GObject *source_object,
 
 	g_debug("%s:%d[%s]", __FILE__, __LINE__, __FUNCTION__);
 
-	serial_port = hev_serial_port_new_finish(res, NULL);
+	/* Remove timeout */
+	source_id = GPOINTER_TO_UINT(g_object_get_data(source_object,
+					"source-id"));
+	g_source_remove(source_id);
+
+	if(!hev_serial_port_config_finish(HEV_SERIAL_PORT(source_object),
+					res, NULL))
+	  return;
+
+	command = g_byte_array_new();
 	g_byte_array_append(command, cmd, sizeof(cmd));
 
 	cancellable = g_cancellable_new();
 	/* Add timeout */
-	source_id = g_timeout_add_seconds(2, g_timeout_handler, cancellable);
-	g_object_set_data(serial_port, "source-id", GUINT_TO_POINTER(source_id));
+	source_id = g_timeout_add(5000, g_timeout_handler, cancellable);
+	g_object_set_data(source_object, "source-id", GUINT_TO_POINTER(source_id));
 
-	hev_serial_port_queue_command_async(HEV_SERIAL_PORT(serial_port), command,
+	hev_serial_port_queue_command_async(HEV_SERIAL_PORT(source_object), command,
 				hev_serial_port_read_size_handler, cancellable,
 				hev_serial_port_queue_command_async_handler, user_data);
 
