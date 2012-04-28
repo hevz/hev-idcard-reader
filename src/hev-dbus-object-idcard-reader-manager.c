@@ -257,7 +257,6 @@ static void hev_serial_port_queue_command_async_handler(GObject *source_object,
 	if(data)
 	{
 		/* Status */
-		g_debug("----- %d %x ----", data->len, data->data[0]);
 		if((9<=data->len) && (0x90==data->data[9]))
 		{
 			GDBusObjectManagerServer *server = NULL;
