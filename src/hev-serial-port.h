@@ -2,7 +2,7 @@
  ============================================================================
  Name        : hev-serial-port.h
  Author      : Heiher <admin@heiher.info>
- Version     : 0.0.1
+ Version     : 0.0.2
  Copyright   : Copyright (C) 2012 everyone.
  Description : 
  ============================================================================
@@ -12,6 +12,7 @@
 #define __HEV_SERIAL_PORT_H__
 
 #include <gio/gio.h>
+#include <termios.h>
 
 G_BEGIN_DECLS
 
@@ -44,6 +45,18 @@ void hev_serial_port_new_async(const gchar *path,
 			GCancellable *cancellable, GAsyncReadyCallback callback,
 			gpointer user_data);
 GObject * hev_serial_port_new_finish(GAsyncResult *res, GError **error);
+
+void hev_serial_port_close_async(HevSerialPort *self,
+			GCancellable *cancellable, GAsyncReadyCallback callback,
+			gpointer user_data);
+gboolean hev_serial_port_close_finish(HevSerialPort *self,
+			GAsyncResult *res, GError **error);
+
+void hev_serial_port_config_async(HevSerialPort *self, struct termios *options,
+			GCancellable *cancellable, GAsyncReadyCallback callback,
+			gpointer user_data);
+gboolean hev_serial_port_config_finish(HevSerialPort *self,
+			GAsyncResult *res, GError **error);
 
 void hev_serial_port_queue_command_async(HevSerialPort *self, GByteArray *command,
 			HevSerialPortReadSizeCallback read_callback, GCancellable *cancellable,
